@@ -10,15 +10,15 @@
 ###################
 # Macros for RARS #
 ###################
-#.macro	PUSH (%reg)
-#	addi	sp,sp,-4
-#	sw	%reg,0(sp) 
-#.end_macro
+.macro	PUSH (%reg)
+	addi	sp,sp,-4          	#decreases the stack pointer, saves a register on the stack
+	sw	%reg,0(sp) 
+.end_macro
 
-#.macro	POP (%reg)
-#	lw	%reg,0(sp)
-#	addi	sp,sp,4
-#.end_macro
+.macro	POP (%reg)			#increases the stack pointer back, restores that register 
+	lw	%reg,0(sp)
+	addi	sp,sp,4
+.end_macro
 ###################
 # Macros for DTEK #
 ###################
@@ -42,19 +42,19 @@ timstr:	.asciz 	"text more text lots of text\0"
 
 # Function for displaying a string with a newline at the end	
 display_string:	
-	li a7,4
-	ecall
-	li a0, 10
-	li a7,11
+	li a7,4  			#print string (together with ecall)
+	ecall				#At this point, a0 must contain the address of the string.syscall go through memory starting at the address of the string
+	li a0, 10			# put ASCII code for newline '\n' 
+	li a7,11			#print character....These two line of code combines (a0, a7) print newline character 
 	ecall
 	jr ra
 	
 timetemplate:
-	la	a0, timstr
+	la	a0, timstr		#load address of 'timstr:.asciz'
 	jal     display_string
 	
 	# wait a little
-	li	a0, 2		# ms
+	li	a0, 2		# ms. 2 as immediate, wait for 2ms. Delay function is expected to pause execution for some amount of time.
 	jal	delay
 	
 	# call tick

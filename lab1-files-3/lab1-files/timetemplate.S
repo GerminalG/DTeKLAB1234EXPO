@@ -71,13 +71,14 @@ timetemplate:
 	j	timetemplate
 
 	
-# tick: update time pointed to by $a0
+# tick: update time pointed to by $a0, update time like once per second
 tick:	lw	t0, 0(a0)	# get time
 	addi	t0, t0, 1	# increase
 	andi	t1, t0, 0xf	# check lowest digit
-	sltiu	t2, t1, 0xa	# if digit < a, okay
-	bnez	t2, tiend
-	addi	t0, t0, 0x6	# adjust lowest digit
+	sltiu	t2, t1, 0xa	# if digit < a (10), as if it is equal to 10 it is not a digit, okay, sltiu: set less than
+	bnez	t2, tiend	# branch if not equal to zero. done 
+	addi	t0, t0, 0x6	# adjust lowest digit if it is 10 then we need to carry it to the next nibble, as it is hex, 0xA+0x6=0x10
+	
 	
 	andi	t1, t0, 0xf0	# check next digit
 	sltiu	t2, t1, 0x60	# if digit < 6, okay
@@ -111,8 +112,60 @@ tiend:	sw	t0,0(a0)	# save updated result
 # Place for your functions: time2string, hex2asc, delay.#
 #########################################################
 time2string:
-
-
+	
+	addi	sp, sp, -16	#reserve 16 bytes
+	sw	ra, 12(sp)
+	sw	s0,  8(sp)
+	sw	s1,  4(sp)
+	sw	s2,  0(sp)	#spare, could omit if unused
+	
+	mv	s0, a0		#address of a 6-byte buffer mm:ss\0
+	mv	s1, a1		#time word in BCD, MIN10 MIN1 SEC10 SEC1
+	
+	srli	t0, s1, 12	#EXTRACT the nibble (shift rught logical imm. and mask into t0
+	andi	t0, t0, 0xF
+	mv	a0, t0
+	jal	hexasc
+	sb	a0, 0(s0)
+	
+	srli	t0, s1, 8
+	andi	t0, t0, 0xF
+	mv	a0, t0
+	jal	hexasc
+	sb	a0, 1(s0)
+	
+	li	t1, 0x3A
+	sb	t1, 2(s0)
+	
+	srli	t0, s1, 4	#s1 holds the packed 0x1653, srli/andi yield 5 (move bits [7:4] down to [3:0])
+	andi	t0, t0, 0xF	#keep only 1 nibble
+	mv	a0, t0
+	jal	hexasc
+	sb	a0, 3(s0)	#store in buffer 3
+	
+	andi	t0, s1, 0xF	
+	mv	a0, t0
+	jal	hexasc
+	sb	a0, 4(s0)
+	
+	sb	x0, 5(s0)
+	
+	lw	s2, 0(sp)
+	lw	s1, 4(sp)
+	lw	s0, 8(sp)
+	lw	ra, 12(sp)	
+	addi	sp, sp, 16
+	jr	ra
+	#ra is saved and restored because subroutine calls another 'hexasc'
+	#s0s0 holds destination buffer pointer and as callee-saved, it must be save and restore
+	#s1, time word, same as above 
+	#s2, keep a 16byte environment
+	
+	#a0, a1. Argument/return registers, caller-saved.
+	#t0, t1. Temporaries, caller-saved.
+	#x0, constant zero register, can't be changed, no saving.
+	
+	
 hex2asc:
 	li	a0, 15 # test number (from 0 to 15)
 	
@@ -146,6 +199,18 @@ chr:
        
 
 delay:
-       jr ra									    
+
+.loop_ms:
+	ble	a0, zero, .done
+	addi	a0, a0, -1
+	li	t0, 3000
+.inner:
+	addi	t0, t0, -1
+	bnez	t0, .inner
+
+.done:
+	jr	ra
+
+																			    
 
 

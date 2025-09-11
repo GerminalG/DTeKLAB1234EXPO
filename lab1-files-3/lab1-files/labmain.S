@@ -18,10 +18,10 @@ main:
     #jal analyze
 
     # Uncomment below for assignment 2
-    jal hex2asc
+    #jal hex2asc
 	
     #U Uncomment below for assignment 3 & 6
-    #jal timetemplate
+    jal timetemplate
 
 loop: j loop
 

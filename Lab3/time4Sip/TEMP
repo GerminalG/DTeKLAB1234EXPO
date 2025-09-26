@@ -1,0 +1,21 @@
+const int LED_NBR[] = {
+    64,  // 0
+    121,  // 1
+    36, // 2
+    48, // 3
+    25,  // 4
+    18,  // 5
+    2,  // 6
+    120,  // 7
+    0,  // 8
+    16   // 9
+};
+
+void set_leds(int led_mask) {
+    *LED_ADDR = led_mask;
+    int j = 0;
+    for (int i = 0; i < 6; i++) {
+        LED_ADDR[j] = LED_NBR[i];
+        j = j+4;
+    }
+}
